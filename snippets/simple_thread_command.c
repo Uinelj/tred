@@ -4,12 +4,12 @@
 #include <semaphore.h>
 #include "../main.c"
 
-#define NBTHREADS 20
+#define NBTHREADS 3
 
 sem_t ready;
 pthread_t cur_work;
 void *work(void *arg) {
-  printf("\t\e[34m%d\033[0mIs it my turn ? It's %d turn\n", pthread_self(), cur_work);
+  printf("\t\e[34m%d\033[0m Is it my turn ? It's %d turn\n", pthread_self(), cur_work);
     while(cur_work != pthread_self()){}
     printf("\t\e[34m%d\033[0m waiting for sem\n", pthread_self());
     sem_wait(&ready);
@@ -45,28 +45,7 @@ int main(int argc, char const *argv[]) {
     thread_queue = enqueue(thread_queue, work_thread[i]);
 
   }
-  /*while(!empty(thread_queue)){
 
-    printf("Thread queue is : \n");
-    printqueue(thread_queue);
-    sem_post(&ready);
-
-    //printf("Unlocking sem\n");
-    // printf("Joining %d\n", top(thread_queue));
-    if(pthread_join(top(thread_queue), NULL)) {
-      fprintf(stderr, "Error joining thread\n");
-      return 2;
-    }
-    printf("Dequeueing thread\n");
-    thread_queue = dequeue(thread_queue);
-
-    if(empty(thread_queue)) {
-      printf("No more threads left.\n");
-    }
-  }*/
-
-  sem_t cur_sem;
-  sem_init(&cur_sem, 0, 0);
   sem_post(&ready);
   while(!empty(thread_queue)) {
     printf("Thread queue :\n");
@@ -78,8 +57,10 @@ int main(int argc, char const *argv[]) {
       fprintf(stderr, "Error joining thread\n");
       return 2;
     }
+    //sem_post(&ready);
     printf("Dequeueing thread\n");
     thread_queue = dequeue(thread_queue);
+
   }
   //while(1){}
   return 0;
