@@ -4,21 +4,20 @@
 #include <semaphore.h>
 #include "../main.c"
 
-#define NBTHREADS 2
+#define NBTHREADS 20
 
 sem_t ready;
 pthread_t cur_work;
 void *work(void *arg) {
-
-    printf("\e[34m%d Waiting for my turn\033[0m", pthread_self());
+  printf("\t\e[34m%d\033[0mIs it my turn ? It's %d turn\n", pthread_self(), cur_work);
     while(cur_work != pthread_self()){}
-    printf("\e[34m%d\033[0m waiting for sem\n", pthread_self());
+    printf("\t\e[34m%d\033[0m waiting for sem\n", pthread_self());
     sem_wait(&ready);
+    printf("\t\e[34m%d\033[0m sem ready. Is it my turn ? It's %d turn\n", pthread_self(), cur_work);
     if(cur_work == pthread_self()) {
-    printf("\e[34m%d\033[0m sem ready. Is it my turn ? It's %d turn\n", pthread_self(), cur_work);
-      printf("\e[34m%d\033[0m It's my turn. Working.\n", pthread_self());
+      printf("\t\e[34m%d\033[0m It's my turn. Working.\n", pthread_self());
       sleep(1);
-      printf("\e[34m%d\033[0m My work is done.\n", pthread_self());
+      printf("\t\e[34m%d\033[0m My work is done. Unlocking mutex\n\n", pthread_self());
       sem_post(&ready);
     }
     return NULL;
@@ -74,7 +73,7 @@ int main(int argc, char const *argv[]) {
     printqueue(thread_queue);
 
     cur_work = top(thread_queue);
-    printf("Next thread to work : %d\n", top(thread_queue));
+    printf("Next thread to work : %d\n\n", top(thread_queue));
     if(pthread_join(top(thread_queue), NULL)) {
       fprintf(stderr, "Error joining thread\n");
       return 2;
