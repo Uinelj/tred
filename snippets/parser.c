@@ -68,7 +68,7 @@ int tokenize(char *str){
 }
 
 
-int main(int argc, char const *argv[]) {
+/*int main(int argc, char const *argv[]) {
   char sample_line[] = "T1>T2>T3>END";
   //printf("%d", tokenize(sample_line));
   //tokenize(sample_line);
@@ -76,4 +76,4 @@ int main(int argc, char const *argv[]) {
 
   print_node(threadset);
   return 0;
-}
+}*/

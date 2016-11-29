@@ -2,7 +2,9 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
+
 #include "../main.c"
+#include "parser.c"
 
 #define NBTHREADS 3
 
@@ -23,32 +25,31 @@ void *work(void *arg) {
     return NULL;
 }
 
-
 int main(int argc, char const *argv[]) {
-  int i=0;
-  pthread_t work_thread[NBTHREADS];
 
-  for(i; i<NBTHREADS; i++) {
+  int i;
+  Node threadset = load("./tredfile.txt");
+  int thread_number = threadset->val;
+
+  Queue thread_queue = malloc(sizeof(Queue));
+  pthread_t first_thread;
+  sem_init(&ready, 0, 0);
+
+  for(i=0; i<thread_number; i++) {
     printf("Creating thread %d\n", i);
-    if(pthread_create(&work_thread[i], NULL, work, NULL)) {
+    pthread_t tmp;
+    if(pthread_create(&tmp, NULL, work, NULL)) {
       fprintf(stderr, "Error creating thread\n");
       return 1;
     }
+    thread_queue = enqueue(thread_queue, tmp);
   }
-
-  sem_init(&ready, 0, 0);
-
-  Queue thread_queue = malloc(sizeof(Queue));
-  thread_queue->val = work_thread[0];
-
-  for(i=1; i<NBTHREADS; i++) {
-    thread_queue = enqueue(thread_queue, work_thread[i]);
-
-  }
+  thread_queue = dequeue(thread_queue);
 
   sem_post(&ready);
+
   while(!empty(thread_queue)) {
-    printf("Thread queue :\n");
+    printf("\nThread queue :\n");
     printqueue(thread_queue);
 
     cur_work = top(thread_queue);
@@ -62,6 +63,6 @@ int main(int argc, char const *argv[]) {
     thread_queue = dequeue(thread_queue);
 
   }
-  //while(1){}
+
   return 0;
 }
