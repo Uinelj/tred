@@ -2,49 +2,86 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <semaphore.h>
+#include "../main.c"
+
+#define NBTHREADS 2
 
 sem_t ready;
-
+pthread_t cur_work;
 void *work(void *arg) {
-  sem_wait(&ready);
-  printf("working...\n");
-  sleep(1);
-  printf("task done.\n");
-  sem_post(&ready);
-  return NULL;
-}
-int main(int argc, char const *argv[]) {
 
-  pthread_t work_thread;
-  pthread_t work_thread2;
+    printf("\e[34m%d Waiting for my turn\033[0m", pthread_self());
+    while(cur_work != pthread_self()){}
+    printf("\e[34m%d\033[0m waiting for sem\n", pthread_self());
+    sem_wait(&ready);
+    if(cur_work == pthread_self()) {
+    printf("\e[34m%d\033[0m sem ready. Is it my turn ? It's %d turn\n", pthread_self(), cur_work);
+      printf("\e[34m%d\033[0m It's my turn. Working.\n", pthread_self());
+      sleep(1);
+      printf("\e[34m%d\033[0m My work is done.\n", pthread_self());
+      sem_post(&ready);
+    }
+    return NULL;
+}
+
+
+int main(int argc, char const *argv[]) {
+  int i=0;
+  pthread_t work_thread[NBTHREADS];
+
+  for(i; i<NBTHREADS; i++) {
+    printf("Creating thread %d\n", i);
+    if(pthread_create(&work_thread[i], NULL, work, NULL)) {
+      fprintf(stderr, "Error creating thread\n");
+      return 1;
+    }
+  }
 
   sem_init(&ready, 0, 0);
-  printf("Creating thread 1\n");
-  if(pthread_create(&work_thread, NULL, work, NULL)) {
-    fprintf(stderr, "Error creating thread\n");
-    return 1;
+
+  Queue thread_queue = malloc(sizeof(Queue));
+  thread_queue->val = work_thread[0];
+
+  for(i=1; i<NBTHREADS; i++) {
+    thread_queue = enqueue(thread_queue, work_thread[i]);
+
   }
+  /*while(!empty(thread_queue)){
 
-  printf("Creating thread 2\n");
-  if(pthread_create(&work_thread2, NULL, work, NULL)) {
-    fprintf(stderr, "Error creating thread\n");
-    return 1;
+    printf("Thread queue is : \n");
+    printqueue(thread_queue);
+    sem_post(&ready);
+
+    //printf("Unlocking sem\n");
+    // printf("Joining %d\n", top(thread_queue));
+    if(pthread_join(top(thread_queue), NULL)) {
+      fprintf(stderr, "Error joining thread\n");
+      return 2;
+    }
+    printf("Dequeueing thread\n");
+    thread_queue = dequeue(thread_queue);
+
+    if(empty(thread_queue)) {
+      printf("No more threads left.\n");
+    }
+  }*/
+
+  sem_t cur_sem;
+  sem_init(&cur_sem, 0, 0);
+  sem_post(&ready);
+  while(!empty(thread_queue)) {
+    printf("Thread queue :\n");
+    printqueue(thread_queue);
+
+    cur_work = top(thread_queue);
+    printf("Next thread to work : %d\n", top(thread_queue));
+    if(pthread_join(top(thread_queue), NULL)) {
+      fprintf(stderr, "Error joining thread\n");
+      return 2;
+    }
+    printf("Dequeueing thread\n");
+    thread_queue = dequeue(thread_queue);
   }
-
-  sleep(4);
-  sem_post(&ready); //launching thread 1
-
-  if(pthread_join(work_thread, NULL)) {
-    fprintf(stderr, "Error joining thread\n");
-    return 2;
-  }
-  printf("Thread 1 done\n");
-
-  if(pthread_join(work_thread2, NULL)) {
-    fprintf(stderr, "Error joining thread\n");
-    return 2;
-  }
-  printf("Thread 2 done\n");
-
+  //while(1){}
   return 0;
 }
